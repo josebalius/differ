@@ -18,63 +18,69 @@ impl DiffMode {
 
 pub struct Differ {
     diff_mode: DiffMode,
+
+    in_diff: bool,
+    output: String,
+    line_count: i32,
 }
 
 impl Differ {
     pub fn new(diff_mode: DiffMode) -> Self {
-        Differ { diff_mode }
+        Differ {
+            diff_mode,
+            in_diff: false,
+            output: String::new(),
+            line_count: 0,
+        }
     }
 
-    pub fn generate(&self, a: String, b: String) -> (bool, String) {
+    fn diff_prompt(&mut self) {
+        if !self.in_diff {
+            self.line_count += 1;
+            self.output
+                .push_str(format!(">>> a (line: {}): ", self.line_count).as_str());
+            self.in_diff = true;
+        } else {
+            self.output
+                .push_str(format!(">>> b (line: {}): ", self.line_count).as_str());
+            self.in_diff = false;
+        }
+    }
+
+    pub fn generate(&mut self, a: String, b: String) -> String {
         let diff_mode_string = self.diff_mode.to_string();
         let diff_mode_str = diff_mode_string.as_str();
         let (dist, changeset) = diff(&a, &b, diff_mode_str);
         if dist == 0 {
-            return (false, "".to_string());
+            return "no difference".to_string();
         }
-
-        let mut in_diff = false;
-        let mut output = String::new();
-        let mut line_count = 1;
 
         for seq in changeset {
             match seq {
                 text_diff::Difference::Same(s) => {
-                    line_count += 1;
-                    output.push_str(&s);
-                    output.push_str(diff_mode_str);
+                    self.line_count += 1;
+                    self.output.push_str(&s);
+                    self.output.push_str(diff_mode_str);
                 }
                 text_diff::Difference::Add(s) => {
-                    (in_diff, line_count) = diff_prompt(in_diff, &mut output, line_count);
+                    self.diff_prompt();
 
-                    output.push_str("+");
-                    output.push_str(&s);
-                    output.push_str("+");
-                    output.push_str(diff_mode_str);
+                    self.output.push_str("+");
+                    self.output.push_str(&s);
+                    self.output.push_str("+");
+                    self.output.push_str(diff_mode_str);
                 }
                 text_diff::Difference::Rem(s) => {
-                    (in_diff, line_count) = diff_prompt(in_diff, &mut output, line_count);
+                    self.diff_prompt();
 
-                    output.push_str("-");
-                    output.push_str(&s);
-                    output.push_str("-");
-                    output.push_str(diff_mode_str);
+                    self.output.push_str("-");
+                    self.output.push_str(&s);
+                    self.output.push_str("-");
+                    self.output.push_str(diff_mode_str);
                 }
             }
         }
 
-        (true, output)
+        self.output.clone()
     }
-}
-
-fn diff_prompt(mut in_diff: bool, output: &mut String, mut line_count: i32) -> (bool, i32) {
-    if !in_diff {
-        line_count += 1;
-        output.push_str(format!(">>> a (line: {}): ", line_count).as_str());
-        in_diff = true;
-    } else {
-        output.push_str(format!(">>> b (line: {}): ", line_count).as_str());
-        in_diff = false;
-    }
-    (in_diff, line_count)
 }

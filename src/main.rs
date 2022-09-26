@@ -73,20 +73,19 @@ async fn endpoint(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let a = decode_param(a_input);
     let b_input = params.get("b").unwrap();
     let b = decode_param(b_input);
-
-    let differ = Differ::new(diff_mode);
-    let (different, output) = differ.generate(a, b);
-
-    if different {
+    if a == b {
         return Ok(Response::builder()
             .status(200)
-            .body(Body::from(output))
+            .body(Body::from("no difference"))
             .unwrap());
     }
 
+    let mut differ = Differ::new(diff_mode);
+    let output = differ.generate(a, b);
+
     Ok(Response::builder()
         .status(200)
-        .body(Body::from("input is the same"))
+        .body(Body::from(output))
         .unwrap())
 }
 
