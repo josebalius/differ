@@ -35,16 +35,16 @@ impl Differ {
     }
 
     fn diff_prompt(&mut self) {
-        if !self.in_diff {
-            self.line_count += 1;
-            self.output
-                .push_str(format!(">>> a (line: {}): ", self.line_count).as_str());
+        let prompt = if !self.in_diff {
             self.in_diff = true;
+            self.line_count += 1;
+            "a"
         } else {
-            self.output
-                .push_str(format!(">>> b (line: {}): ", self.line_count).as_str());
             self.in_diff = false;
-        }
+            "b"
+        };
+        self.output
+            .push_str(format!(">>> {} (line: {}): ", prompt, self.line_count).as_str());
     }
 
     pub fn generate(&mut self, a: String, b: String) -> String {
