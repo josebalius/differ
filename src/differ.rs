@@ -45,7 +45,7 @@ impl Differ {
                     output.push_str(diff_mode_str);
                 }
                 text_diff::Difference::Add(s) => {
-                    (in_diff, output, line_count) = diff_prompt(in_diff, output, line_count);
+                    (in_diff, line_count) = diff_prompt(in_diff, &mut output, line_count);
 
                     output.push_str("+");
                     output.push_str(&s);
@@ -53,7 +53,7 @@ impl Differ {
                     output.push_str(diff_mode_str);
                 }
                 text_diff::Difference::Rem(s) => {
-                    (in_diff, output, line_count) = diff_prompt(in_diff, output, line_count);
+                    (in_diff, line_count) = diff_prompt(in_diff, &mut output, line_count);
 
                     output.push_str("-");
                     output.push_str(&s);
@@ -67,7 +67,7 @@ impl Differ {
     }
 }
 
-fn diff_prompt(mut in_diff: bool, mut output: String, mut line_count: i32) -> (bool, String, i32) {
+fn diff_prompt(mut in_diff: bool, output: &mut String, mut line_count: i32) -> (bool, i32) {
     if !in_diff {
         line_count += 1;
         output.push_str(format!(">>> a (line: {}): ", line_count).as_str());
@@ -76,5 +76,5 @@ fn diff_prompt(mut in_diff: bool, mut output: String, mut line_count: i32) -> (b
         output.push_str(format!(">>> b (line: {}): ", line_count).as_str());
         in_diff = false;
     }
-    (in_diff, output, line_count)
+    (in_diff, line_count)
 }
